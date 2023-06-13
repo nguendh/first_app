@@ -1,18 +1,27 @@
-import 'package:first_app/entity/todo_entity.dart';
+import 'package:first_app/core/todo_database.dart';
+import 'package:first_app/core/todo_entity.dart';
 import 'package:first_app/pages/todo_list_page.dart';
 import 'package:flutter/material.dart';
 
-class TodoItem extends StatelessWidget {
+class TodoItem extends StatefulWidget {
   final TodoEntity todo;
-  final VoidCallback? onUpdate;
 
-  const TodoItem({Key? key, required this.todo, this.onUpdate})
-      : super(key: key);
+  const TodoItem({
+    Key? key,
+    required this.todo,
+  }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _TodoItemState();
+}
+
+class _TodoItemState extends State<TodoItem> {
+  final database = TodoDatabase();
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(todo.id),
+      key: Key(widget.todo.name),
       secondaryBackground: Container(
         color: Colors.red,
         child: const Align(
@@ -42,31 +51,53 @@ class TodoItem extends StatelessWidget {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
           /// Delete
+          setState(
+            () {
+              database.removeTask(widget.todo);
+            },
+          );
         } else {
           /// Complete
+          setState(
+            () {
+              database.modifyTask(widget.todo, completed: true);
+            },
+          );
         }
         return false;
       },
-      child: ListTile(
-        title: Text(
-          todo.title,
-          style: todo.completed
-              ? Theme.of(context)
-                  .textTheme
-                  .bodyText1
-                  ?.copyWith(decoration: TextDecoration.lineThrough)
-              : Theme.of(context).textTheme.bodyText1,
-        ),
-        leading: IconButton(
-          onPressed: onUpdate,
-          icon: Icon(
-            todo.completed ? Icons.check_box : Icons.check_box_outline_blank,
+      child: Container(
+        margin: const EdgeInsets.only(left: 10, right: 10),
+        child: ListTile(
+          title: Text(
+            widget.todo.description,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        trailing: IconButton(
-          onPressed: () {},
-          icon: const Icon(
-            Icons.info_outline,
+          // if (todo.hasDeadline) {
+          //   subtitle: todo.hasDeadline ? Text(todo.deadline!.date) }
+          //    ,
+          leading: Checkbox(
+            value: widget.todo.completed,
+            onChanged: (bool? value) {
+              setState(() {
+                database.modifyTask(widget.todo, completed: value);
+              });
+            },
+          ),
+          trailing: IconButton(
+            onPressed: () async {
+              // final _ = await Navigator.of(context).push(
+              //   MaterialPageRoute(
+              //     builder: (context) {
+              //       return CreateTodoPage(todo: widget.todo);
+              //     },
+              //   ),
+              // );
+            },
+            icon: const Icon(
+              Icons.info_outline,
+            ),
           ),
         ),
       ),
@@ -74,14 +105,14 @@ class TodoItem extends StatelessWidget {
   }
 
   String makeTitle(TodoEntity todo) {
-    if (todo.important == ImportantType.high) {
+    if (todo.important == ImportanceType.high) {
       // <YOUR CODE HERE>
-      todo.title = todo.title;
+      todo.description = todo.description;
     }
-    if (todo.important == ImportantType.low) {
+    if (todo.important == ImportanceType.low) {
       // <YOUR CODE HERE>
-      todo.title = todo.title;
+      todo.description = todo.description;
     }
-    return todo.title;
+    return todo.description;
   }
 }
